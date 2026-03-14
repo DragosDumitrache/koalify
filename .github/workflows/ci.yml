@@ -1,0 +1,61 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create false
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+
+      - name: Cache dependencies
+        id: cached-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-dependencies.outputs.cache-hit != 'true'
+        run: poetry install
+
+      - name: Run Tests
+        run: pytest
+
+      - name: SemVer
+        if: github.ref == 'refs/heads/main'
+        id: semver
+        uses: DragosDumitrache/versioner-action@v3
+
+      - name: Tag & Publish
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo ${{ steps.semver.outputs.version }}
+          git config --global user.email "robot@oneroar.io"
+          git config --global user.name "Rolly Polly"
+          git tag -a ${{ steps.semver.outputs.version }} -m ${{ steps.semver.outputs.version }}
+          poetry version ${{ steps.semver.outputs.version }}
+          git add pyproject.toml
+          git commit --amend --no-edit
+          git push --force --tags
+          poetry publish --build
