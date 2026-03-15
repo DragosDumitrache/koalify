@@ -35,6 +35,66 @@ conditions = [F.status == "active", F.age >= 18]
 rule = all_of(*conditions)
 ```
 
+## Examples
+
+### Dataclasses
+
+```python
+from dataclasses import dataclass
+from koalify import F, all_of
+
+@dataclass
+class Order:
+    product: str
+    quantity: int
+    price: float
+    fulfilled: bool
+
+needs_review = (F.quantity > 100) & (F.price >= 500) & (F.fulfilled == False)
+
+order = Order(product="Widget", quantity=200, price=750.0, fulfilled=False)
+needs_review(order)  # True
+```
+
+### Pydantic
+
+```python
+from pydantic import BaseModel
+from koalify import F, any_of
+
+class Address(BaseModel):
+    city: str
+    country: str
+
+class Customer(BaseModel):
+    name: str
+    tier: str
+    address: Address
+
+is_priority = (F.tier.in_({"gold", "platinum"})) | (F.address.country == "US")
+
+customer = Customer(name="Alice", tier="gold", address=Address(city="London", country="UK"))
+is_priority(customer)  # True
+```
+
+### Dynamic rule composition
+
+```python
+from koalify import F, all_of
+
+def build_filter(min_age: int | None = None, status: str | None = None, roles: set[str] | None = None):
+    criteria = []
+    if min_age is not None:
+        criteria.append(F.age >= min_age)
+    if status is not None:
+        criteria.append(F.status == status)
+    if roles is not None:
+        criteria.append(F.role.in_(roles))
+    return all_of(*criteria) if criteria else lambda _: True
+
+user_filter = build_filter(min_age=18, roles={"admin", "editor"})
+```
+
 ## API
 
 | Symbol | Description |

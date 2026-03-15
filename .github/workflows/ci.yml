@@ -42,20 +42,20 @@ jobs:
       - name: Run Tests
         run: pytest
 
-      # - name: SemVer
-      #   if: github.ref == 'refs/heads/main'
-      #   id: semver
-      #   uses: DragosDumitrache/versioner-action@v3
+      - name: SemVer
+        if: github.ref == 'refs/heads/main'
+        id: semver
+        uses: DragosDumitrache/versioner-action@v3
 
-      # - name: Tag & Publish
-      #   if: github.ref == 'refs/heads/main'
-      #   run: |
-      #     echo ${{ steps.semver.outputs.version }}
-      #     git config --global user.email "robot@oneroar.io"
-      #     git config --global user.name "Rolly Polly"
-      #     git tag -a ${{ steps.semver.outputs.version }} -m ${{ steps.semver.outputs.version }}
-      #     poetry version ${{ steps.semver.outputs.version }}
-      #     git add pyproject.toml
-      #     git commit --amend --no-edit
-      #     git push --force --tags
-      #     poetry publish --build
+      - name: Tag & Publish
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo ${{ steps.semver.outputs.version }}
+          git config --global user.email "robot@oneroar.io"
+          git config --global user.name "Rolly Polly"
+          git tag -a ${{ steps.semver.outputs.version }} -m ${{ steps.semver.outputs.version }}
+          poetry version ${{ steps.semver.outputs.version }}
+          git add pyproject.toml
+          git commit --amend --no-edit
+          git push --force --tags
+          poetry publish --build
