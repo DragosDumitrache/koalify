@@ -63,7 +63,7 @@ class Le(_Compare):
 
 
 class In(Criterion):
-    def __init__(self, field: Any, values: set | frozenset | list | tuple):
+    def __init__(self, field: Any, values: frozenset):
         self.field = field
         self.values = values
 

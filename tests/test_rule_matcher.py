@@ -89,14 +89,11 @@ class TestNumericComparisons:
 
 
 class TestSetInclusion:
-    def test_in_set(self, alice: User):
-        assert F.role.in_({"admin", "moderator"})(alice)
-
-    def test_in_list(self, alice: User):
-        assert F.role.in_(["admin", "moderator"])(alice)
+    def test_in_match(self, alice: User):
+        assert F.role.in_("admin", "moderator")(alice)
 
     def test_not_in(self, bob: User):
-        assert not F.role.in_({"admin", "moderator"})(bob)
+        assert not F.role.in_("admin", "moderator")(bob)
 
 
 # ── Between (inclusive) ─────────────────────────────────────────────
@@ -229,7 +226,7 @@ class TestRepr:
         assert repr(F.score.between(80, 100)) == "80 <= score <= 100"
 
     def test_in(self):
-        r = repr(F.role.in_(["a", "b"]))
+        r = repr(F.role.in_("a", "b"))
         assert "role in" in r
 
     def test_and_repr(self):
@@ -354,7 +351,7 @@ class TestComplexExpression:
         (F.status == "active")
         & (F.age >= 18)
         & F.score.between(50, 100)
-        & F.role.in_({"admin", "moderator", "editor"})
+        & F.role.in_("admin", "moderator", "editor")
         & ~(F.name == "root")
         & ((F.address.city == "London") | (F.address.zip_code == "EC1A"))
     ) | (

@@ -17,7 +17,7 @@ from koalify import F, all_of, any_of
 is_eligible = (
     (F.status == "active")
     & (F.age >= 18)
-    & (F.role.in_({"admin", "moderator", "editor"}))
+    & (F.role.in_("admin", "moderator", "editor"))
     & F.score.between(50, 100)
 )
 
@@ -71,7 +71,7 @@ class Customer(BaseModel):
     tier: str
     address: Address
 
-is_priority = (F.tier.in_({"gold", "platinum"})) | (F.address.country == "US")
+is_priority = (F.tier.in_("gold", "platinum")) | (F.address.country == "US")
 
 customer = Customer(name="Alice", tier="gold", address=Address(city="London", country="UK"))
 is_priority(customer)  # True
@@ -114,7 +114,7 @@ def build_filter(min_age: int | None = None, status: str | None = None, roles: s
     if status is not None:
         criteria.append(F.status == status)
     if roles is not None:
-        criteria.append(F.role.in_(roles))
+        criteria.append(F.role.in_(*roles))
     return all_of(*criteria) if criteria else lambda _: True
 
 user_filter = build_filter(min_age=18, roles={"admin", "editor"})
@@ -126,7 +126,7 @@ user_filter = build_filter(min_age=18, roles={"admin", "editor"})
 |---|---|
 | `F.field` | Reference a field (supports nesting: `F.a.b.c` and indexing: `F.a[0]`, `F.a["k"]`) |
 | `==  !=  >  >=  <  <=` | Comparison operators on `FieldRef` |
-| `.in_(values)` | Set membership |
+| `.in_(*values)` | Set membership |
 | `.between(lo, hi)` | Inclusive range check |
 | `&` | AND (flattens nested ANDs) |
 | `\|` | OR (flattens nested ORs) |

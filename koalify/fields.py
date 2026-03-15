@@ -68,8 +68,8 @@ class FieldRef:
 
     # ── set / range predicates ───────────────────────────────────
 
-    def in_(self, values: set | frozenset | list | tuple) -> In:
-        return In(self, values)
+    def in_(self, *values: Any) -> In:
+        return In(self, frozenset(values))
 
     def between(self, lower: Any, upper: Any) -> Between:
         return Between(self, lower, upper)
