@@ -245,6 +245,66 @@ class TestRepr:
         assert r.startswith("~")
 
 
+# ── Item access (indexing) ─────────────────────────────────────────
+
+
+class TestItemAccess:
+    def test_list_index(self, alice: User):
+        assert (F.tags[0] == "vip")(alice)
+
+    def test_list_index_no_match(self, alice: User):
+        assert not (F.tags[0] == "nope")(alice)
+
+    def test_list_second_element(self, alice: User):
+        assert (F.tags[1] == "beta")(alice)
+
+    def test_dict_key(self):
+        class Obj:
+            data = {"color": "red", "size": 42}
+
+        assert (F.data["color"] == "red")(Obj())
+        assert (F.data["size"] > 10)(Obj())
+
+    def test_index_then_attr(self):
+        class Inner:
+            name = "found"
+
+        class Obj:
+            items = [Inner()]
+
+        assert (F.items[0].name == "found")(Obj())
+
+    def test_attr_then_index(self, alice: User):
+        rule = (F.address.city == "London") & (F.tags[0] == "vip")
+        assert rule(alice)
+
+    def test_index_out_of_range_raises(self, alice: User):
+        with pytest.raises(IndexError):
+            (F.tags[99] == "x")(alice)
+
+    def test_missing_key_raises(self):
+        class Obj:
+            data = {"a": 1}
+
+        with pytest.raises(KeyError):
+            (F.data["missing"] == "x")(Obj())
+
+    def test_repr_list_index(self):
+        assert repr(F.tags[0]) == "tags[0]"
+
+    def test_repr_dict_key(self):
+        assert repr(F.data["key"]) == "data['key']"
+
+    def test_repr_chained(self):
+        assert repr(F.items[0].name) == "items[0].name"
+
+    def test_hash_distinct(self):
+        assert hash(F.tags[0]) != hash(F.tags[1])
+
+    def test_hash_stable(self):
+        assert hash(F.tags[0]) == hash(F.tags[0])
+
+
 # ── Edge cases ──────────────────────────────────────────────────────
 
 

@@ -77,6 +77,31 @@ customer = Customer(name="Alice", tier="gold", address=Address(city="London", co
 is_priority(customer)  # True
 ```
 
+### Item access (lists, dicts)
+
+```python
+from dataclasses import dataclass
+from koalify import F
+
+@dataclass
+class Event:
+    name: str
+    tags: list[str]
+    metadata: dict[str, str]
+
+event = Event(name="deploy", tags=["prod", "urgent"], metadata={"region": "eu-west-1"})
+
+# List indexing
+(F.tags[0] == "prod")(event)  # True
+
+# Dict key access
+(F.metadata["region"] == "eu-west-1")(event)  # True
+
+# Mix with attribute access and composition
+is_urgent_prod = (F.tags[0] == "prod") & (F.tags[1] == "urgent")
+is_urgent_prod(event)  # True
+```
+
 ### Dynamic rule composition
 
 ```python
@@ -99,7 +124,7 @@ user_filter = build_filter(min_age=18, roles={"admin", "editor"})
 
 | Symbol | Description |
 |---|---|
-| `F.field` | Reference a field (supports nesting: `F.a.b.c`) |
+| `F.field` | Reference a field (supports nesting: `F.a.b.c` and indexing: `F.a[0]`, `F.a["k"]`) |
 | `==  !=  >  >=  <  <=` | Comparison operators on `FieldRef` |
 | `.in_(values)` | Set membership |
 | `.between(lo, hi)` | Inclusive range check |
@@ -111,7 +136,7 @@ user_filter = build_filter(min_age=18, roles={"admin", "editor"})
 
 ## How It Works
 
-`F.field_name` returns a `FieldRef`. Comparison operators on `FieldRef` produce `Criterion` objects. Criteria compose with `&`, `|`, and `~`. Calling a criterion resolves field values via `getattr` — works with dataclasses, Pydantic models, namedtuples, or any object with attributes.
+`F.field_name` returns a `FieldRef`. Comparison operators on `FieldRef` produce `Criterion` objects. Criteria compose with `&`, `|`, and `~`. Calling a criterion resolves field values via `getattr` and `__getitem__` — works with dataclasses, Pydantic models, namedtuples, or any object with attributes. Item access (`F.tags[0]`, `F.data["key"]`) uses `[]` on the resolved value, so standard `IndexError` / `KeyError` exceptions propagate naturally for missing entries.
 
 ## License
 

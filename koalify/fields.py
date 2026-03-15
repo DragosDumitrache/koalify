@@ -2,26 +2,38 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from koalify.comparisons import Between, Eq, Ge, Gt, In, Le, Lt, Ne
+
+
+@dataclass(frozen=True)
+class _ItemAccess:
+    """Path segment representing ``obj[key]`` rather than ``getattr(obj, name)``."""
+
+    key: Any
 
 
 class FieldRef:
     """
     Reference to one (possibly nested) field on an object.
 
-    Supports Python comparison operators to produce criteria, and
-    attribute access for nested fields: F.address.city
+    Supports Python comparison operators to produce criteria,
+    attribute access for nested fields (``F.address.city``),
+    and item access for sequences/mappings (``F.tags[0]``, ``F.data["k"]``).
     """
 
-    def __init__(self, *path: str):
+    def __init__(self, *path: str | _ItemAccess):
         self._path = path
 
     def resolve(self, obj: Any) -> Any:
         value: Any = obj
         for part in self._path:
-            value = getattr(value, part)
+            if isinstance(part, _ItemAccess):
+                value = value[part.key]
+            else:
+                value = getattr(value, part)
         return value
 
     # ── nested access ────────────────────────────────────────────
@@ -30,6 +42,9 @@ class FieldRef:
         if name.startswith("_"):
             raise AttributeError(name)
         return FieldRef(*self._path, name)
+
+    def __getitem__(self, key: Any) -> FieldRef:
+        return FieldRef(*self._path, _ItemAccess(key))
 
     # ── comparison operators → criteria ──────────────────────────
 
@@ -62,7 +77,15 @@ class FieldRef:
     # ── repr ─────────────────────────────────────────────────────
 
     def __repr__(self) -> str:
-        return ".".join(self._path)
+        parts: list[str] = []
+        for segment in self._path:
+            if isinstance(segment, _ItemAccess):
+                parts.append(f"[{segment.key!r}]")
+            elif parts:
+                parts.append(f".{segment}")
+            else:
+                parts.append(segment)
+        return "".join(parts)
 
     def __hash__(self) -> int:
         return hash(self._path)
