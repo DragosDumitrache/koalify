@@ -7,12 +7,10 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         id: setup-python
@@ -24,9 +22,7 @@ jobs:
         uses: abatilo/actions-poetry@v3
 
       - name: Configure Poetry
-        run: |
-          poetry config virtualenvs.create false
-          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+        run: poetry config virtualenvs.create false
 
       - name: Cache dependencies
         id: cached-dependencies
@@ -42,20 +38,51 @@ jobs:
       - name: Run Tests
         run: pytest
 
+  version:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: SemVer
-        if: github.ref == 'refs/heads/main'
         id: semver
         uses: DragosDumitrache/versioner-action@3.1.0
 
-      - name: Tag & Publish
-        if: github.ref == 'refs/heads/main'
+      - name: Tag
         run: |
-          echo ${{ steps.semver.outputs.version }}
           git config --global user.email "robot@oneroar.io"
           git config --global user.name "Rolly Polly"
           git tag -a ${{ steps.semver.outputs.version }} -m ${{ steps.semver.outputs.version }}
-          poetry version ${{ steps.semver.outputs.version }}
-          git add pyproject.toml
-          git commit --amend --no-edit
-          git push --force --tags
+          git push --tags
+
+  publish:
+    if: github.ref == 'refs/heads/main'
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create false
+          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+
+      - name: Publish
+        run: |
+          poetry version ${{ needs.version.outputs.version }}
           poetry publish --build
