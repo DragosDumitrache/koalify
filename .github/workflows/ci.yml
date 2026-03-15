@@ -3,8 +3,20 @@ name: Build & Test
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "koalify/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - ".github/workflows/**"
   pull_request:
     branches: [ "main" ]
+    paths:
+      - "koalify/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - ".github/workflows/**"
 
 jobs:
   test:

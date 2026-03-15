@@ -136,7 +136,13 @@ user_filter = build_filter(min_age=18, roles={"admin", "editor"})
 
 ## How It Works
 
-`F.field_name` returns a `FieldRef`. Comparison operators on `FieldRef` produce `Criterion` objects. Criteria compose with `&`, `|`, and `~`. Calling a criterion resolves field values via `getattr` and `__getitem__` — works with dataclasses, Pydantic models, namedtuples, or any object with attributes. Item access (`F.tags[0]`, `F.data["key"]`) uses `[]` on the resolved value, so standard `IndexError` / `KeyError` exceptions propagate naturally for missing entries.
+1. `F.field_name` returns a `FieldRef` — a lightweight path descriptor
+2. Comparison operators (`==`, `>`, `.in_()`, etc.) produce `Criterion` objects
+3. Criteria compose with `&`, `|`, and `~` (flattening nested groups automatically)
+4. Calling a criterion resolves field values at runtime via `getattr` and `[]`
+
+Works with dataclasses, Pydantic models, namedtuples, or any object with attributes.
+Item access (`F.tags[0]`, `F.data["key"]`) delegates to the resolved value's `__getitem__`, so standard `IndexError` / `KeyError` exceptions propagate naturally.
 
 ## License
 
