@@ -82,7 +82,16 @@ jobs:
           poetry config virtualenvs.create false
           poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
 
-      - name: Publish
+      - name: Publish to PyPI
         run: |
           poetry version ${{ needs.version.outputs.version }}
           poetry publish --build
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ needs.version.outputs.version }} \
+            --title "${{ needs.version.outputs.version }}" \
+            --generate-notes \
+            dist/*
